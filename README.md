@@ -1,6 +1,6 @@
 # LOA Radiant
 
-Lost Ark support overlay for tracking attack buffs, brand duration and selected skills duration using the [`meter-core`](https://github.com/lost-ark-dev/meter-core) packet parser.
+**Beta Pre-Release.** Lost Ark support overlay for tracking attack buffs, brand duration and selected skills duration using the [`meter-core`](https://github.com/lost-ark-dev/meter-core) packet parser.
 
 ![](./docs/loa-radiant-img1.jpg)
 ![](./docs/loa-radiant-img2.jpg)
@@ -20,8 +20,6 @@ Lost Ark support overlay for tracking attack buffs, brand duration and selected 
 **Sonavel Bard POV**
 
 [![](./docs/demo-bard-sonavel.jpg)](https://youtu.be/wqt-OboX2aA)
-
-***
 
 ## Development
 
