@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+    font-family: 'JetBrains Mono';
+}
+
+.text-roboto {
+    font-family: 'Roboto Mono';
+}
+
+.draggable {
+    -webkit-app-region: drag;
+}

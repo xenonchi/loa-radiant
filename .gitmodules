@@ -1,0 +1,3 @@
+[submodule "ui/meter-data"]
+	path = ui/meter-data
+	url = https://github.com/lost-ark-dev/meter-data/
