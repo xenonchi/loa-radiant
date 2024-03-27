@@ -7,7 +7,7 @@
 
 ## Features
 
-1. Alerts are flashing if the attack buff is about to expire on a party member or the brand is about to expire on a boss* 
+1. Alerts are flashing if the attack buff is about to expire on a party member or the brand is about to expire on a boss
 2. Remaining brand duration on the boss
 3. Remaining attack buff duration on party members
 4. Remaining duration on important skills\
