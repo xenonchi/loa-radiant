@@ -21,7 +21,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-package-lock.json
 
 out/
 electron/build
