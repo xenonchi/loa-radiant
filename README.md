@@ -12,8 +12,8 @@
 3. Remaining attack buff duration on party members
 4. Remaining duration on important skills\
 &nbsp;&nbsp;&nbsp;&nbsp;4.1. Inactive skills are more opaque\
-&nbsp;&nbsp;&nbsp;&nbsp;4.2. Skill is active\
-&nbsp;&nbsp;&nbsp;&nbsp;4.3. Skill is casting
+&nbsp;&nbsp;&nbsp;&nbsp;4.2. Active skills show remaining duration\
+&nbsp;&nbsp;&nbsp;&nbsp;4.3. Casting skills rotate
 
 **Settings**
 - The attack buff and brand alert threshold can be changed in the settings.

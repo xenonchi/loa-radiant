@@ -361,6 +361,7 @@ var EffectsTracker = class {
   identityGauge;
   bossInfo;
   partyInfo;
+  nearbyPC;
   summonsTracker;
   skillsTracker;
   entityTracker;
@@ -372,6 +373,7 @@ var EffectsTracker = class {
     this.identityGauge = 0;
     this.bossInfo = [];
     this.partyInfo = [];
+    this.nearbyPC = /* @__PURE__ */ new Map();
     this.summonsTracker = /* @__PURE__ */ new Map();
     this.skillsTracker = /* @__PURE__ */ new Map();
     this.entityTracker = /* @__PURE__ */ new Map();
@@ -388,6 +390,7 @@ var EffectsTracker = class {
   resetTracker() {
     this.resetStartTime();
     this.bossInfo = [];
+    this.nearbyPC = /* @__PURE__ */ new Map();
     this.skillsTracker = /* @__PURE__ */ new Map();
     this.removeExpiredEntities(300);
     this.latestBuff = null;
@@ -444,7 +447,7 @@ var EffectsTracker = class {
   whichTrackedEntity(objectId) {
     if (this.playerInfo.playerId === objectId) {
       return 1;
-    } else if (this.partyInfo.map((p) => p.characterId).includes(objectId)) {
+    } else if (this.partyInfo.map((p) => p.characterId).includes(objectId) || this.partyInfo.map((p) => p.playerId).includes(objectId)) {
       return 2;
     } else if (this.bossInfo.map((b) => b.objectId).includes(objectId)) {
       return 3;
@@ -466,6 +469,34 @@ var EffectsTracker = class {
       if (partyMember.characterId === this.playerInfo.characterId) {
         partyMember.characterId = this.playerInfo.playerId;
       }
+      this.syncPlayerIDFromPartyInfo(partyMember.characterId);
+    }
+  }
+  syncPlayerIDFromPartyInfo(characterId) {
+    const pcInfo = this.nearbyPC.get(characterId);
+    if (pcInfo !== void 0) {
+      this.syncPartyMemberPlayerID(characterId, pcInfo);
+      console.log(this.partyInfo);
+    }
+  }
+  syncPartyMemberPlayerID(characterId, pcInfo) {
+    const partyMemberFilter = this.partyInfo.filter((p) => p.characterId === characterId);
+    if (partyMemberFilter.length === 1) {
+      const partyMember = partyMemberFilter[0];
+      const editedPartyMember = {
+        ...partyMember,
+        playerId: pcInfo.playerId
+      };
+      this.partyInfo = this.partyInfo.filter((p) => p.characterId !== characterId).concat(editedPartyMember);
+    }
+  }
+  syncPlayerIDFromNewPC(trimmedPKT) {
+    this.nearbyPC.set(
+      trimmedPKT.characterId,
+      trimmedPKT
+    );
+    if (this.partyInfo.map((p) => p.characterId).includes(trimmedPKT.characterId)) {
+      this.syncPartyMemberPlayerID(trimmedPKT.characterId, trimmedPKT);
     }
   }
   updateLastEffectTimeTracker(objectId, effect) {
@@ -823,7 +854,8 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
               Number(member.classId)
             ),
             characterId: Number(member.characterId),
-            classId: Number(member.classId)
+            classId: Number(member.classId),
+            playerId: -1
           };
         })
       };
@@ -894,6 +926,7 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
       characterId: Number(pkt.parsed?.pcStruct.characterId),
       playerId: Number(pkt.parsed?.pcStruct.playerId)
     };
+    effectsTracker2.syncPlayerIDFromNewPC(trimmedPKT);
     fileLogger.writePKT("NEWPC ", trimmedPKT);
   }).on("PKTNewNpcSummon", (pkt) => {
     if (handleWhitelistSummons(pkt.parsed?.npcData?.typeId)) {

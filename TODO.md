@@ -1,7 +1,8 @@
 
 **System**
 - `.exe` setup release
-- `electron-updater`
+    - Fix: Cannot locate meter-data when setup, but it's fine afterwards
+- `electron-updater` for auto-update
 - Remove WS and use IPC for Electron-Frontend communication
 - WebSocket: Attempt to reconnect
 - Conversion of `bigint` based on required precision
@@ -20,6 +21,6 @@
     - Periodically clear `bossInfo` array based on `lastEffectTimeTracker`
 
 **UI**
-- Use ai to re-generate icon
+- Use ai to re-generate program icon
 - Find better tooltip library
 - Icon for focus & unfocus

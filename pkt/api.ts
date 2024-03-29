@@ -31,8 +31,8 @@ wsUI.on("connection", (ws: WebSocket) => {
 // ws://localhost:8081
 console.log("WebSocket servers running on ports 8081")
 
-process.on('exit', () => {
+process.on("exit", () => {
     wsUI.close(() => {
-      console.log('WebSocket server closed.');
-    });
-  });
+        console.log("WebSocket server closed.")
+    })
+})

@@ -24,7 +24,7 @@ import {
     TrimmedInitPC,
     TrimmedNpcData,
     TrimmedNpcSummon,
-    TrimmedPCInfo,
+    TrimmedNewPC,
     TrimmedPartyInfo,
     TrimmedPartyLeaveResult,
     TrimmedRaidBegin,
@@ -212,6 +212,7 @@ export function InitLogger(
                             ),
                             characterId: Number(member.characterId),
                             classId: Number(member.classId),
+                            playerId: -1,
                         }
                     }),
                 }
@@ -284,7 +285,7 @@ export function InitLogger(
             fileLogger.writePKT("INITPC", trimmedPKT)
         })
         .on("PKTNewPC", (pkt) => {
-            const trimmedPKT: TrimmedPCInfo = {
+            const trimmedPKT: TrimmedNewPC = {
                 name: String(pkt.parsed?.pcStruct.name),
                 avgItemLevel: Number(pkt.parsed?.pcStruct.avgItemLevel),
                 characterClass: meterData.getClassName(
@@ -296,6 +297,8 @@ export function InitLogger(
                 characterId: Number(pkt.parsed?.pcStruct.characterId),
                 playerId: Number(pkt.parsed?.pcStruct.playerId),
             }
+
+            effectsTracker.syncPlayerIDFromNewPC(trimmedPKT)
             fileLogger.writePKT("NEWPC ", trimmedPKT)
         })
         .on("PKTNewNpcSummon", (pkt) => {

@@ -40,6 +40,7 @@ export type PartyMember = {
     characterClass: string
     characterId: number
     classId: number
+    playerId: number
 }
 
 export type TrimmedPartyInfo = {
@@ -74,7 +75,7 @@ export type NpcData = {
     type: string
 }
 
-export type NpcInfo = {
+export type NPCInfo = {
     objectId: number
     id: number
     name: string
@@ -94,7 +95,7 @@ export type TrimmedNpcSummon = {
     typeId: number
 }
 
-export type TrimmedPCInfo = {
+export type TrimmedNewPC = {
     name: string
     avgItemLevel: number
     characterClass: string
@@ -104,6 +105,8 @@ export type TrimmedPCInfo = {
     characterId: number
     playerId: number
 }
+
+export type PCInfo = TrimmedNewPC
 
 export type TrimmedRaidResult = {
     raidResult: number
