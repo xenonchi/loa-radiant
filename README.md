@@ -35,9 +35,15 @@
 git clone --recurse-submodules https://github.com/xenonchi/loa-radiant
 ```
 
-**Install Dependencies**
-- On Windows, you need [Npcap with WinPcap compatibilities](https://npcap.com/#download)
-- In `pkt` and `ui`, run `npm i` to install packages
+**Requirements**
+- For Windows, [Npcap with WinPcap compatibilities](https://npcap.com/#download)
+- [Node](https://nodejs.org/en/download) v20.6.1 or higher
+- [Python](https://www.python.org/downloads/) v3.10 or higher
+    - Run `pip install setuptools`
+
+**Install Packages**
+- In `pkt`, run `npm i` to install node modules
+- In `ui`, run `npm i` to install node modules
 - In `ui/node_modules/.bin`, run `.\electron-rebuild.cmd --module-dir ../..` to rebuild broken packages
 
 **Dev**

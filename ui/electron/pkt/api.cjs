@@ -914,7 +914,11 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
       gearLevel: Number(pkt.parsed?.gearLevel),
       name: String(pkt.parsed?.name),
       statPairs: {
-        swiftness: Number(pkt.parsed?.statPair.filter((pair) => pair.statType === 18)[0].value)
+        swiftness: Number(
+          pkt.parsed?.statPair.filter(
+            (pair) => pair.statType === 18
+          )[0].value
+        )
       }
     };
     effectsTracker2.updateInitPC(trimmedPKT);

@@ -1,6 +1,5 @@
 
 **System**
-- Update electron dependencies
 - `.exe` setup release
     - Fix: Cannot locate meter-data when setup, but it's fine afterwards
 - `electron-updater` for auto-update
