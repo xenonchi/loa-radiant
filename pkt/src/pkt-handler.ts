@@ -36,6 +36,7 @@ import {
     TrimmedTriggerBossBattleStatus,
     TrimmedTriggerFinishNotify,
     TrimmedTriggerStartNotify,
+    TrimmedSkillCancelNotify,
 } from "./helpers/pkt-trimmed"
 import { FileLogger } from "./file-logger"
 import {
@@ -128,7 +129,7 @@ export function InitLogger(
     capture.on("connect", (ip) => {
         parser.onConnect(ip)
     })
-
+    
     stream
         .on("PKTSkillCastNotify", (pkt) => {
             if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
@@ -157,6 +158,17 @@ export function InitLogger(
         .on("PKTSkillStageNotify", (pkt) => {
             if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
                 // fileLogger.writePKT("SKLSTA", pkt.parsed)
+            }
+        })
+        .on("PKTSkillCancelNotify", (pkt) => {
+            if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
+                const trimmedPKT: TrimmedSkillCancelNotify = {
+                    sourceId: Number(pkt.parsed?.caster),
+                    skillId: Number(pkt.parsed?.skillId),
+                }
+
+                fileLogger.writePKT("SKLCAN", trimmedPKT)
+                effectsTracker.updateSkillCancelNotify(trimmedPKT)
             }
         })
         .on("PKTStatusEffectAddNotify", (pkt) => {
@@ -268,8 +280,6 @@ export function InitLogger(
             // effectsTracker.show()
         })
         .on("PKTInitPC", (pkt) => {
-            console.log(pkt.parsed)
-            console.log(pkt.parsed?.statPair)
             const trimmedPKT: TrimmedInitPC = {
                 playerId: Number(pkt.parsed?.playerId),
                 characterId: Number(pkt.parsed?.characterId),
@@ -279,6 +289,9 @@ export function InitLogger(
                 classId: Number(pkt.parsed?.classId),
                 gearLevel: Number(pkt.parsed?.gearLevel),
                 name: String(pkt.parsed?.name),
+                statPairs: {
+                    swiftness: Number(pkt.parsed?.statPair.filter(pair => pair.statType === 18)[0].value)
+                }
             }
 
             effectsTracker.updateInitPC(trimmedPKT)

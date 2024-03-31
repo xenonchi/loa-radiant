@@ -14,6 +14,11 @@ export type TrimmedSkillStartNotify = {
     skillId: number
 }
 
+export type TrimmedSkillCancelNotify = {
+    sourceId: number
+    skillId: number
+}
+
 export type SkillInstanceInfo = TrimmedSkillStartNotify
 
 export type TrimmedStatusEffectAddNotify = {
@@ -64,6 +69,11 @@ export type TrimmedInitPC = {
     classId: number
     gearLevel: number
     name: string
+    statPairs: StatPairs
+}
+
+export type StatPairs = {
+    swiftness: number
 }
 
 export type PlayerInfo = TrimmedInitPC

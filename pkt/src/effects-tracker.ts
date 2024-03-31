@@ -17,6 +17,7 @@ import {
     TrimmedNpcSummon,
     TrimmedNewPC,
     PCInfo,
+    TrimmedSkillCancelNotify,
 } from "./helpers/pkt-trimmed"
 import { SkillInstance, getSecondsNow } from "./helpers/tracked-skills"
 
@@ -84,6 +85,9 @@ const defaultPlayerInfo: PlayerInfo = {
     classId: -1,
     gearLevel: -1,
     name: "N/A",
+    statPairs: {
+        swiftness: 1600
+    }
 }
 
 export class EffectsTracker {
@@ -265,7 +269,6 @@ export class EffectsTracker {
 
         if (pcInfo !== undefined) {
             this.syncPartyMemberPlayerID(characterId, pcInfo)
-            console.log(this.partyInfo)
         }
     }
 
@@ -358,7 +361,16 @@ export class EffectsTracker {
             )
 
             this.skillsTracker.set(trimmedPKT.skillId, skillInstance)
-            // console.log(Array.from(this.skillsTracker.values()).map(s => s.currentState()))
+        }
+    }
+
+    updateSkillCancelNotify(trimmedPKT: TrimmedSkillCancelNotify) {
+        if (trimmedPKT.sourceId === this.playerInfo.playerId) {
+            const skillInstance = this.skillsTracker.get(trimmedPKT.skillId)
+            
+            if (skillInstance !== undefined) {
+                skillInstance.cancelSkill()
+            }
         }
     }
 
@@ -398,19 +410,6 @@ export class EffectsTracker {
      * TESTING
      ***************************************/
 
-    show(): void {
-        console.log(
-            getTimeNow(),
-            this.getElapsedTime(),
-            "\n",
-            this.playerInfo.playerId,
-            this.identityGauge,
-            this.partyInfo.map((partyMember) => partyMember.characterId),
-            this.bossInfo.map((npc) => npc.name),
-            this.showEntityTracker(),
-        )
-    }
-
     apiTestWIP() {
         return {
             t: getTimeNow(),
@@ -440,27 +439,6 @@ export class EffectsTracker {
                 return `${Math.abs(Math.round(timeDelta))}s ago`
             }
         }
-    }
-
-    showEntityTracker(): Map<number, string[]> {
-        /**
-         * Does not show expired effects.
-         * Does not show entities with no effects.
-         */
-
-        const showEntityTracker = new Map<number, string[]>()
-
-        for (const [id, effects] of this.entityTracker.entries()) {
-            const validEffects = effects
-                .filter((effect) => effect.isOngoing())
-                .map((effect) => effect.show())
-
-            if (validEffects.length > 0) {
-                showEntityTracker.set(id, validEffects)
-            }
-        }
-
-        return showEntityTracker
     }
 
     //**********************************
