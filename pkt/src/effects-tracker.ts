@@ -8,13 +8,16 @@ import {
     TrimmedStatusEffectAddNotify,
     TrimmedStatusEffectRemoveNotify,
     PartyMember,
-    NpcInfo,
+    NPCInfo,
     TrimmedNpcData,
     PlayerInfo,
     TrimmedInitPC,
     TrimmedSkillCastNotify,
     TrimmedSkillStartNotify,
     TrimmedNpcSummon,
+    TrimmedNewPC,
+    PCInfo,
+    TrimmedSkillCancelNotify,
 } from "./helpers/pkt-trimmed"
 import { SkillInstance, getSecondsNow } from "./helpers/tracked-skills"
 
@@ -82,13 +85,17 @@ const defaultPlayerInfo: PlayerInfo = {
     classId: -1,
     gearLevel: -1,
     name: "N/A",
+    statPairs: {
+        swiftness: 1600,
+    },
 }
 
 export class EffectsTracker {
     private playerInfo: PlayerInfo
     private identityGauge: number
-    private bossInfo: NpcInfo[]
+    private bossInfo: NPCInfo[]
     private partyInfo: PartyMember[]
+    private nearbyPC: Map<number, PCInfo>
     private summonsTracker: Map<number, number>
     private skillsTracker: Map<number, SkillInstance>
     private entityTracker: Map<number, Effect[]>
@@ -101,6 +108,7 @@ export class EffectsTracker {
         this.identityGauge = 0
         this.bossInfo = []
         this.partyInfo = []
+        this.nearbyPC = new Map<number, PCInfo>()
         this.summonsTracker = new Map<number, number>()
         this.skillsTracker = new Map<number, SkillInstance>()
         this.entityTracker = new Map<number, Effect[]>()
@@ -120,6 +128,7 @@ export class EffectsTracker {
     resetTracker(): void {
         this.resetStartTime()
         this.bossInfo = []
+        this.nearbyPC = new Map<number, PCInfo>()
         this.skillsTracker = new Map<number, SkillInstance>()
         this.removeExpiredEntities(300)
         this.latestBuff = null
@@ -205,7 +214,8 @@ export class EffectsTracker {
         if (this.playerInfo.playerId === objectId) {
             return 1
         } else if (
-            this.partyInfo.map((p) => p.characterId).includes(objectId)
+            this.partyInfo.map((p) => p.characterId).includes(objectId) ||
+            this.partyInfo.map((p) => p.playerId).includes(objectId)
         ) {
             return 2
         } else if (this.bossInfo.map((b) => b.objectId).includes(objectId)) {
@@ -224,8 +234,8 @@ export class EffectsTracker {
     }
 
     addBossEntity(trimmedPKT: TrimmedNpcData): void {
-        //this.bossInfo = [trimmedPKT as NpcInfo]
-        this.bossInfo.push(trimmedPKT as NpcInfo)
+        //this.bossInfo = [trimmedPKT as NPCInfo]
+        this.bossInfo.push(trimmedPKT as NPCInfo)
     }
 
     addPartyEntities(trimmedPKT: TrimmedPartyInfo): void {
@@ -244,6 +254,59 @@ export class EffectsTracker {
             if (partyMember.characterId === this.playerInfo.characterId) {
                 partyMember.characterId = this.playerInfo.playerId
             }
+
+            this.syncPlayerIDFromPartyInfo(partyMember.characterId)
+        }
+    }
+
+    syncPlayerIDFromPartyInfo(characterId: number): void {
+        /**
+         * When a new party member is added, check nearbyPC
+         * to match the playerId
+         */
+
+        const pcInfo = this.nearbyPC.get(characterId)
+
+        if (pcInfo !== undefined) {
+            this.syncPartyMemberPlayerID(characterId, pcInfo)
+        }
+    }
+
+    syncPartyMemberPlayerID(characterId: number, pcInfo: PCInfo): void {
+        const partyMemberFilter = this.partyInfo.filter(
+            (p) => p.characterId === characterId,
+        )
+
+        if (partyMemberFilter.length === 1) {
+            const partyMember = partyMemberFilter[0]
+            const editedPartyMember = {
+                ...partyMember,
+                playerId: pcInfo.playerId,
+            }
+
+            this.partyInfo = this.partyInfo
+                .filter((p) => p.characterId !== characterId)
+                .concat(editedPartyMember as PartyMember)
+        }
+    }
+
+    syncPlayerIDFromNewPC(trimmedPKT: TrimmedNewPC): void {
+        /**
+         * When a new PC ia detected, if it is a party member, add
+         * playerId to partyInfo
+         */
+
+        this.nearbyPC.set(trimmedPKT.characterId, trimmedPKT)
+
+        if (
+            this.partyInfo
+                .map((p) => p.characterId)
+                .includes(trimmedPKT.characterId)
+        ) {
+            this.syncPartyMemberPlayerID(
+                trimmedPKT.characterId,
+                trimmedPKT as PCInfo,
+            )
         }
     }
 
@@ -298,7 +361,16 @@ export class EffectsTracker {
             )
 
             this.skillsTracker.set(trimmedPKT.skillId, skillInstance)
-            // console.log(Array.from(this.skillsTracker.values()).map(s => s.currentState()))
+        }
+    }
+
+    updateSkillCancelNotify(trimmedPKT: TrimmedSkillCancelNotify) {
+        if (trimmedPKT.sourceId === this.playerInfo.playerId) {
+            const skillInstance = this.skillsTracker.get(trimmedPKT.skillId)
+
+            if (skillInstance !== undefined) {
+                skillInstance.cancelSkill()
+            }
         }
     }
 
@@ -338,19 +410,6 @@ export class EffectsTracker {
      * TESTING
      ***************************************/
 
-    show(): void {
-        console.log(
-            getTimeNow(),
-            this.getElapsedTime(),
-            "\n",
-            this.playerInfo.playerId,
-            this.identityGauge,
-            this.partyInfo.map((partyMember) => partyMember.characterId),
-            this.bossInfo.map((npc) => npc.name),
-            this.showEntityTracker(),
-        )
-    }
-
     apiTestWIP() {
         return {
             t: getTimeNow(),
@@ -382,27 +441,6 @@ export class EffectsTracker {
         }
     }
 
-    showEntityTracker(): Map<number, string[]> {
-        /**
-         * Does not show expired effects.
-         * Does not show entities with no effects.
-         */
-
-        const showEntityTracker = new Map<number, string[]>()
-
-        for (const [id, effects] of this.entityTracker.entries()) {
-            const validEffects = effects
-                .filter((effect) => effect.isOngoing())
-                .map((effect) => effect.show())
-
-            if (validEffects.length > 0) {
-                showEntityTracker.set(id, validEffects)
-            }
-        }
-
-        return showEntityTracker
-    }
-
     //**********************************
     /**************************************
      * EFFECTS TRACKER WEBSOCKET HELPER METHODS
@@ -424,7 +462,7 @@ export class EffectsTracker {
         }
     }
 
-    guessLatestBoss(): NpcInfo | undefined {
+    guessLatestBoss(): NPCInfo | undefined {
         /**
          * Return the boss that has most recently been
          * affected by a status effect.
@@ -435,7 +473,7 @@ export class EffectsTracker {
          * If this.bossInfo is empty, return null
          */
 
-        let mostRecentBoss: NpcInfo | undefined = undefined
+        let mostRecentBoss: NPCInfo | undefined = undefined
         let mostRecentBossTime = -1
 
         for (let boss of this.bossInfo) {

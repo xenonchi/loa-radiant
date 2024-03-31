@@ -24,7 +24,7 @@ import {
     TrimmedInitPC,
     TrimmedNpcData,
     TrimmedNpcSummon,
-    TrimmedPCInfo,
+    TrimmedNewPC,
     TrimmedPartyInfo,
     TrimmedPartyLeaveResult,
     TrimmedRaidBegin,
@@ -36,6 +36,7 @@ import {
     TrimmedTriggerBossBattleStatus,
     TrimmedTriggerFinishNotify,
     TrimmedTriggerStartNotify,
+    TrimmedSkillCancelNotify,
 } from "./helpers/pkt-trimmed"
 import { FileLogger } from "./file-logger"
 import {
@@ -159,6 +160,17 @@ export function InitLogger(
                 // fileLogger.writePKT("SKLSTA", pkt.parsed)
             }
         })
+        .on("PKTSkillCancelNotify", (pkt) => {
+            if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
+                const trimmedPKT: TrimmedSkillCancelNotify = {
+                    sourceId: Number(pkt.parsed?.caster),
+                    skillId: Number(pkt.parsed?.skillId),
+                }
+
+                fileLogger.writePKT("SKLCAN", trimmedPKT)
+                effectsTracker.updateSkillCancelNotify(trimmedPKT)
+            }
+        })
         .on("PKTStatusEffectAddNotify", (pkt) => {
             if (
                 handleWhitelistNum(pkt.parsed?.statusEffectData.statusEffectId)
@@ -212,6 +224,7 @@ export function InitLogger(
                             ),
                             characterId: Number(member.characterId),
                             classId: Number(member.classId),
+                            playerId: -1,
                         }
                     }),
                 }
@@ -267,8 +280,6 @@ export function InitLogger(
             // effectsTracker.show()
         })
         .on("PKTInitPC", (pkt) => {
-            console.log(pkt.parsed)
-            console.log(pkt.parsed?.statPair)
             const trimmedPKT: TrimmedInitPC = {
                 playerId: Number(pkt.parsed?.playerId),
                 characterId: Number(pkt.parsed?.characterId),
@@ -278,13 +289,20 @@ export function InitLogger(
                 classId: Number(pkt.parsed?.classId),
                 gearLevel: Number(pkt.parsed?.gearLevel),
                 name: String(pkt.parsed?.name),
+                statPairs: {
+                    swiftness: Number(
+                        pkt.parsed?.statPair.filter(
+                            (pair) => pair.statType === 18,
+                        )[0].value,
+                    ),
+                },
             }
 
             effectsTracker.updateInitPC(trimmedPKT)
             fileLogger.writePKT("INITPC", trimmedPKT)
         })
         .on("PKTNewPC", (pkt) => {
-            const trimmedPKT: TrimmedPCInfo = {
+            const trimmedPKT: TrimmedNewPC = {
                 name: String(pkt.parsed?.pcStruct.name),
                 avgItemLevel: Number(pkt.parsed?.pcStruct.avgItemLevel),
                 characterClass: meterData.getClassName(
@@ -296,6 +314,8 @@ export function InitLogger(
                 characterId: Number(pkt.parsed?.pcStruct.characterId),
                 playerId: Number(pkt.parsed?.pcStruct.playerId),
             }
+
+            effectsTracker.syncPlayerIDFromNewPC(trimmedPKT)
             fileLogger.writePKT("NEWPC ", trimmedPKT)
         })
         .on("PKTNewNpcSummon", (pkt) => {

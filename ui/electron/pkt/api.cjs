@@ -216,6 +216,12 @@ var SkillInstance = class {
     this.pkt = pkt;
     this.skillDurations = getSkillDurations(pkt.skillId, pkt);
   }
+  cancelSkill() {
+    this.skillDurations = trackedSkillDurationsCompute({
+      castTime: 0.01,
+      duration: 0.01
+    });
+  }
   currentState() {
     const diff = getSecondsNow() - this.startTime;
     if (diff > this.skillDurations.durationTotal) {
@@ -354,13 +360,17 @@ var defaultPlayerInfo = {
   characterClass: "N/A",
   classId: -1,
   gearLevel: -1,
-  name: "N/A"
+  name: "N/A",
+  statPairs: {
+    swiftness: 1600
+  }
 };
 var EffectsTracker = class {
   playerInfo;
   identityGauge;
   bossInfo;
   partyInfo;
+  nearbyPC;
   summonsTracker;
   skillsTracker;
   entityTracker;
@@ -372,6 +382,7 @@ var EffectsTracker = class {
     this.identityGauge = 0;
     this.bossInfo = [];
     this.partyInfo = [];
+    this.nearbyPC = /* @__PURE__ */ new Map();
     this.summonsTracker = /* @__PURE__ */ new Map();
     this.skillsTracker = /* @__PURE__ */ new Map();
     this.entityTracker = /* @__PURE__ */ new Map();
@@ -388,6 +399,7 @@ var EffectsTracker = class {
   resetTracker() {
     this.resetStartTime();
     this.bossInfo = [];
+    this.nearbyPC = /* @__PURE__ */ new Map();
     this.skillsTracker = /* @__PURE__ */ new Map();
     this.removeExpiredEntities(300);
     this.latestBuff = null;
@@ -444,7 +456,7 @@ var EffectsTracker = class {
   whichTrackedEntity(objectId) {
     if (this.playerInfo.playerId === objectId) {
       return 1;
-    } else if (this.partyInfo.map((p) => p.characterId).includes(objectId)) {
+    } else if (this.partyInfo.map((p) => p.characterId).includes(objectId) || this.partyInfo.map((p) => p.playerId).includes(objectId)) {
       return 2;
     } else if (this.bossInfo.map((b) => b.objectId).includes(objectId)) {
       return 3;
@@ -466,6 +478,35 @@ var EffectsTracker = class {
       if (partyMember.characterId === this.playerInfo.characterId) {
         partyMember.characterId = this.playerInfo.playerId;
       }
+      this.syncPlayerIDFromPartyInfo(partyMember.characterId);
+    }
+  }
+  syncPlayerIDFromPartyInfo(characterId) {
+    const pcInfo = this.nearbyPC.get(characterId);
+    if (pcInfo !== void 0) {
+      this.syncPartyMemberPlayerID(characterId, pcInfo);
+    }
+  }
+  syncPartyMemberPlayerID(characterId, pcInfo) {
+    const partyMemberFilter = this.partyInfo.filter(
+      (p) => p.characterId === characterId
+    );
+    if (partyMemberFilter.length === 1) {
+      const partyMember = partyMemberFilter[0];
+      const editedPartyMember = {
+        ...partyMember,
+        playerId: pcInfo.playerId
+      };
+      this.partyInfo = this.partyInfo.filter((p) => p.characterId !== characterId).concat(editedPartyMember);
+    }
+  }
+  syncPlayerIDFromNewPC(trimmedPKT) {
+    this.nearbyPC.set(trimmedPKT.characterId, trimmedPKT);
+    if (this.partyInfo.map((p) => p.characterId).includes(trimmedPKT.characterId)) {
+      this.syncPartyMemberPlayerID(
+        trimmedPKT.characterId,
+        trimmedPKT
+      );
     }
   }
   updateLastEffectTimeTracker(objectId, effect) {
@@ -502,6 +543,14 @@ var EffectsTracker = class {
       this.skillsTracker.set(trimmedPKT.skillId, skillInstance);
     }
   }
+  updateSkillCancelNotify(trimmedPKT) {
+    if (trimmedPKT.sourceId === this.playerInfo.playerId) {
+      const skillInstance = this.skillsTracker.get(trimmedPKT.skillId);
+      if (skillInstance !== void 0) {
+        skillInstance.cancelSkill();
+      }
+    }
+  }
   //**********************************
   /**************************************
    * OTHER PACKETS MISC METHODS
@@ -526,18 +575,6 @@ var EffectsTracker = class {
   /**************************************
    * TESTING
    ***************************************/
-  show() {
-    console.log(
-      getTimeNow(),
-      this.getElapsedTime(),
-      "\n",
-      this.playerInfo.playerId,
-      this.identityGauge,
-      this.partyInfo.map((partyMember) => partyMember.characterId),
-      this.bossInfo.map((npc) => npc.name),
-      this.showEntityTracker()
-    );
-  }
   apiTestWIP() {
     return {
       t: getTimeNow(),
@@ -565,16 +602,6 @@ var EffectsTracker = class {
         return `${Math.abs(Math.round(timeDelta))}s ago`;
       }
     }
-  }
-  showEntityTracker() {
-    const showEntityTracker = /* @__PURE__ */ new Map();
-    for (const [id, effects] of this.entityTracker.entries()) {
-      const validEffects = effects.filter((effect) => effect.isOngoing()).map((effect) => effect.show());
-      if (validEffects.length > 0) {
-        showEntityTracker.set(id, validEffects);
-      }
-    }
-    return showEntityTracker;
   }
   //**********************************
   /**************************************
@@ -784,6 +811,15 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
   }).on("PKTSkillStageNotify", (pkt) => {
     if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
     }
+  }).on("PKTSkillCancelNotify", (pkt) => {
+    if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
+      const trimmedPKT = {
+        sourceId: Number(pkt.parsed?.caster),
+        skillId: Number(pkt.parsed?.skillId)
+      };
+      fileLogger.writePKT("SKLCAN", trimmedPKT);
+      effectsTracker2.updateSkillCancelNotify(trimmedPKT);
+    }
   }).on("PKTStatusEffectAddNotify", (pkt) => {
     if (handleWhitelistNum(pkt.parsed?.statusEffectData.statusEffectId)) {
       const trimmedPKT = {
@@ -823,7 +859,8 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
               Number(member.classId)
             ),
             characterId: Number(member.characterId),
-            classId: Number(member.classId)
+            classId: Number(member.classId),
+            playerId: -1
           };
         })
       };
@@ -867,8 +904,6 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
     effectsTracker2.updateInitEnv(trimmedPKT);
     fileLogger.writePKT("INITEN", trimmedPKT);
   }).on("PKTInitPC", (pkt) => {
-    console.log(pkt.parsed);
-    console.log(pkt.parsed?.statPair);
     const trimmedPKT = {
       playerId: Number(pkt.parsed?.playerId),
       characterId: Number(pkt.parsed?.characterId),
@@ -877,7 +912,10 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
       ),
       classId: Number(pkt.parsed?.classId),
       gearLevel: Number(pkt.parsed?.gearLevel),
-      name: String(pkt.parsed?.name)
+      name: String(pkt.parsed?.name),
+      statPairs: {
+        swiftness: Number(pkt.parsed?.statPair.filter((pair) => pair.statType === 18)[0].value)
+      }
     };
     effectsTracker2.updateInitPC(trimmedPKT);
     fileLogger.writePKT("INITPC", trimmedPKT);
@@ -894,6 +932,7 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
       characterId: Number(pkt.parsed?.pcStruct.characterId),
       playerId: Number(pkt.parsed?.pcStruct.playerId)
     };
+    effectsTracker2.syncPlayerIDFromNewPC(trimmedPKT);
     fileLogger.writePKT("NEWPC ", trimmedPKT);
   }).on("PKTNewNpcSummon", (pkt) => {
     if (handleWhitelistSummons(pkt.parsed?.npcData?.typeId)) {

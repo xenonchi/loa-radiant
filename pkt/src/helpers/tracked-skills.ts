@@ -19,6 +19,13 @@ export class SkillInstance {
         this.skillDurations = getSkillDurations(pkt.skillId, pkt)
     }
 
+    cancelSkill() {
+        this.skillDurations = trackedSkillDurationsCompute({
+            castTime: 0.01,
+            duration: 0.01,
+        })
+    }
+
     currentState(): {
         skillName: string
         iconPath: string
