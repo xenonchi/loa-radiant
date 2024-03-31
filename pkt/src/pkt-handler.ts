@@ -129,7 +129,7 @@ export function InitLogger(
     capture.on("connect", (ip) => {
         parser.onConnect(ip)
     })
-    
+
     stream
         .on("PKTSkillCastNotify", (pkt) => {
             if (trackedSkillID.includes(Number(pkt.parsed?.skillId))) {
@@ -290,8 +290,12 @@ export function InitLogger(
                 gearLevel: Number(pkt.parsed?.gearLevel),
                 name: String(pkt.parsed?.name),
                 statPairs: {
-                    swiftness: Number(pkt.parsed?.statPair.filter(pair => pair.statType === 18)[0].value)
-                }
+                    swiftness: Number(
+                        pkt.parsed?.statPair.filter(
+                            (pair) => pair.statType === 18,
+                        )[0].value,
+                    ),
+                },
             }
 
             effectsTracker.updateInitPC(trimmedPKT)

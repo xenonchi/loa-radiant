@@ -22,7 +22,7 @@ export class SkillInstance {
     cancelSkill() {
         this.skillDurations = trackedSkillDurationsCompute({
             castTime: 0.01,
-            duration: 0.01
+            duration: 0.01,
         })
     }
 

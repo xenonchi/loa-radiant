@@ -86,8 +86,8 @@ const defaultPlayerInfo: PlayerInfo = {
     gearLevel: -1,
     name: "N/A",
     statPairs: {
-        swiftness: 1600
-    }
+        swiftness: 1600,
+    },
 }
 
 export class EffectsTracker {
@@ -367,7 +367,7 @@ export class EffectsTracker {
     updateSkillCancelNotify(trimmedPKT: TrimmedSkillCancelNotify) {
         if (trimmedPKT.sourceId === this.playerInfo.playerId) {
             const skillInstance = this.skillsTracker.get(trimmedPKT.skillId)
-            
+
             if (skillInstance !== undefined) {
                 skillInstance.cancelSkill()
             }
