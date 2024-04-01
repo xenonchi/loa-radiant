@@ -66,10 +66,16 @@ export const triggerDungeonEndCode: number[] = [
  **
  ***************************************************************************/
 
+/**
+ * Bard: Awakening, Harp, Guardian's Tune, Sonic Vibration
+ * Paladin: Awakening, Holy Protection, Holy Area
+ * Artist: Awakening, Drawing Orchids, Sun Well
+ */
+
 export const trackedSkillIDByClass: { [key: string]: number[] } = {
     bard: [21180, 21170, 21230, 21250], // Identity: 21140, 21141, 21142, 21143,
-    paladin: [],
-    artist: [],
+    paladin: [36210, 36140, 36120],
+    artist: [31910, 31410, 31420],
 }
 
 export const trackedSkillID: number[] = Object.values(

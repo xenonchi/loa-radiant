@@ -98,8 +98,8 @@ var triggerDungeonEndCode = [
 var trackedSkillIDByClass = {
   bard: [21180, 21170, 21230, 21250],
   // Identity: 21140, 21141, 21142, 21143,
-  paladin: [],
-  artist: []
+  paladin: [36210, 36140, 36120],
+  artist: [31910, 31410, 31420]
 };
 var trackedSkillID = Object.values(
   trackedSkillIDByClass
@@ -216,19 +216,20 @@ var SkillInstance = class {
     this.iconPath = iconPath;
     this.pkt = pkt;
     this.swiftness = swiftness;
-    this.skillDurations = getSkillDurations(this.computeAtkSpeed(), pkt.skillId, pkt);
+    this.skillDurations = getSkillDurations(
+      this.computeAtkSpeed(),
+      pkt.skillId,
+      pkt
+    );
   }
   computeAtkSpeed() {
     return 1 + this.swiftness * 1.1 * 1717e-7;
   }
   cancelSkill() {
-    this.skillDurations = trackedSkillDurationsCompute(
-      this.swiftness,
-      {
-        castTime: 0.01,
-        duration: 0.01
-      }
-    );
+    this.skillDurations = trackedSkillDurationsCompute(this.swiftness, {
+      castTime: 0.01,
+      duration: 0.01
+    });
   }
   currentState() {
     const diff = getSecondsNow() - this.startTime;
@@ -266,14 +267,16 @@ var getSkillDurations = (atkSpeed, skillId, pkt) => {
   return trackedSkillDurationsCompute(atkSpeed, skillDurationsFunc(pkt));
 };
 var trackedSkillDurationsCompute = (atkSpeed, skillDuration) => {
+  const adjCastTime = skillDuration.castTime / atkSpeed;
   const skillDurationComputed = {
-    castTime: skillDuration.castTime / atkSpeed,
+    castTime: adjCastTime,
     duration: skillDuration.duration,
-    durationTotal: skillDuration.castTime + skillDuration.duration
+    durationTotal: adjCastTime + skillDuration.duration
   };
   return skillDurationComputed;
 };
 var trackedSkillDurations = {
+  // BARD
   21180: (pkt) => {
     return {
       castTime: 0.8,
@@ -323,6 +326,44 @@ var trackedSkillDurations = {
       castTime: 1,
       duration: (pkt.skillOptionData?.tripodIndex?.third ?? 2) * 4
       // Guardian's tune half duration tripod
+    };
+  },
+  // PALADIN
+  36210: (_2) => {
+    return {
+      castTime: 3,
+      duration: 10
+    };
+  },
+  36120: (_2) => {
+    return {
+      castTime: 1.3,
+      duration: 5
+    };
+  },
+  36140: (_2) => {
+    return {
+      castTime: 0.4,
+      duration: 6
+    };
+  },
+  // ARTIST
+  31910: (_2) => {
+    return {
+      castTime: 3.4,
+      duration: 12
+    };
+  },
+  31410: (_2) => {
+    return {
+      castTime: 0.8,
+      duration: 3.5
+    };
+  },
+  31420: (_2) => {
+    return {
+      castTime: 1,
+      duration: 3
     };
   }
 };

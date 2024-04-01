@@ -118,16 +118,18 @@ const trackedSkillDurationsCompute = (
     atkSpeed: number,
     skillDuration: SkillDurationsInfo,
 ): SkillDurationsInfoComputed => {
+    const adjCastTime = skillDuration.castTime / atkSpeed
     const skillDurationComputed: SkillDurationsInfoComputed = {
-        castTime: skillDuration.castTime / atkSpeed,
+        castTime: adjCastTime,
         duration: skillDuration.duration,
-        durationTotal: skillDuration.castTime + skillDuration.duration,
+        durationTotal: adjCastTime + skillDuration.duration,
     }
 
     return skillDurationComputed
 }
 
 const trackedSkillDurations: { [key: number]: SkillDurations } = {
+    // BARD
     21180: (pkt) => {
         return {
             castTime: 0.8,
@@ -180,6 +182,44 @@ const trackedSkillDurations: { [key: number]: SkillDurations } = {
             castTime: 1,
             duration: (pkt.skillOptionData?.tripodIndex?.third ?? 2) * 4,
             // Guardian's tune half duration tripod
+        }
+    },
+    // PALADIN
+    36210: (_) => {
+        return {
+            castTime: 3,
+            duration: 10,
+        }
+    },
+    36120: (_) => {
+        return {
+            castTime: 1.3,
+            duration: 5,
+        }
+    },
+    36140: (_) => {
+        return {
+            castTime: 0.4,
+            duration: 6,
+        }
+    },
+    // ARTIST
+    31910: (_) => {
+        return {
+            castTime: 3.4,
+            duration: 12,
+        }
+    },
+    31410: (_) => {
+        return {
+            castTime: 0.8,
+            duration: 3.5,
+        }
+    },
+    31420: (_) => {
+        return {
+            castTime: 1,
+            duration: 3,
         }
     },
 }
