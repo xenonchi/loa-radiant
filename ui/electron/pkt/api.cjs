@@ -98,8 +98,8 @@ var triggerDungeonEndCode = [
 var trackedSkillIDByClass = {
   bard: [21180, 21170, 21230, 21250],
   // Identity: 21140, 21141, 21142, 21143,
-  paladin: [],
-  artist: []
+  paladin: [36210, 36140, 36120],
+  artist: [31910, 31410, 31420]
 };
 var trackedSkillID = Object.values(
   trackedSkillIDByClass
@@ -208,16 +208,25 @@ var SkillInstance = class {
   skillName;
   iconPath;
   pkt;
+  swiftness;
   skillDurations;
-  constructor(skillName, iconPath, pkt) {
+  constructor(swiftness, skillName, iconPath, pkt) {
     this.startTime = getSecondsNow();
     this.skillName = skillName;
     this.iconPath = iconPath;
     this.pkt = pkt;
-    this.skillDurations = getSkillDurations(pkt.skillId, pkt);
+    this.swiftness = swiftness;
+    this.skillDurations = getSkillDurations(
+      this.computeAtkSpeed(),
+      pkt.skillId,
+      pkt
+    );
+  }
+  computeAtkSpeed() {
+    return 1 + this.swiftness * 1.1 * 1717e-7;
   }
   cancelSkill() {
-    this.skillDurations = trackedSkillDurationsCompute({
+    this.skillDurations = trackedSkillDurationsCompute(this.swiftness, {
       castTime: 0.01,
       duration: 0.01
     });
@@ -253,68 +262,108 @@ var defaultSkillDurationsInfoComputed = {
   duration: -1,
   durationTotal: -1
 };
-var getSkillDurations = (skillId, pkt) => {
+var getSkillDurations = (atkSpeed, skillId, pkt) => {
   const skillDurationsFunc = trackedSkillDurations[skillId] ?? ((_2) => defaultSkillDurationsInfoComputed);
-  return trackedSkillDurationsCompute(skillDurationsFunc(pkt));
+  return trackedSkillDurationsCompute(atkSpeed, skillDurationsFunc(pkt));
 };
-var trackedSkillDurationsCompute = (skillDuration) => {
+var trackedSkillDurationsCompute = (atkSpeed, skillDuration) => {
+  const adjCastTime = skillDuration.castTime / atkSpeed;
   const skillDurationComputed = {
-    castTime: skillDuration.castTime,
+    castTime: adjCastTime,
     duration: skillDuration.duration,
-    durationTotal: skillDuration.castTime + skillDuration.duration
+    durationTotal: adjCastTime + skillDuration.duration
   };
   return skillDurationComputed;
 };
 var trackedSkillDurations = {
+  // BARD
   21180: (pkt) => {
     return {
-      castTime: 0.6,
+      castTime: 0.8,
       duration: 10 + Number(pkt.skillOptionData?.tripodIndex?.first === 1) * (1.4 + 0.6 * (pkt.skillOptionData?.tripodLevel?.first ?? 1))
       // Harp of Rhythm duration tripod
     };
   },
   21170: (_2) => {
     return {
-      castTime: 0.8,
+      castTime: 1,
       duration: 4
     };
   },
   21140: (_2) => {
     return {
-      castTime: 0.7,
+      castTime: 1,
       duration: 8
     };
   },
   21141: (_2) => {
     return {
-      castTime: 0.7,
+      castTime: 1,
       duration: 12
     };
   },
   21142: (_2) => {
     return {
-      castTime: 0.7,
+      castTime: 1,
       duration: 16
     };
   },
   21143: (_2) => {
     return {
-      castTime: 0.7,
+      castTime: 1,
       duration: 120
       // Guessing!!
     };
   },
   21230: (_2) => {
     return {
-      castTime: 2.3,
+      castTime: 3,
       duration: 10
     };
   },
   21250: (pkt) => {
     return {
-      castTime: 0.8,
+      castTime: 1,
       duration: (pkt.skillOptionData?.tripodIndex?.third ?? 2) * 4
       // Guardian's tune half duration tripod
+    };
+  },
+  // PALADIN
+  36210: (_2) => {
+    return {
+      castTime: 3,
+      duration: 10
+    };
+  },
+  36120: (_2) => {
+    return {
+      castTime: 1.3,
+      duration: 5
+    };
+  },
+  36140: (_2) => {
+    return {
+      castTime: 0.4,
+      duration: 6
+    };
+  },
+  // ARTIST
+  31910: (_2) => {
+    return {
+      castTime: 3.4,
+      duration: 12
+    };
+  },
+  31410: (_2) => {
+    return {
+      castTime: 0.8,
+      duration: 3.5
+    };
+  },
+  31420: (_2) => {
+    return {
+      castTime: 1,
+      duration: 3
     };
   }
 };
@@ -362,7 +411,7 @@ var defaultPlayerInfo = {
   gearLevel: -1,
   name: "N/A",
   statPairs: {
-    swiftness: 1600
+    swiftness: 1550
   }
 };
 var EffectsTracker = class {
@@ -536,6 +585,7 @@ var EffectsTracker = class {
   updateSkillStartNotify(trimmedPKT) {
     if (trimmedPKT.sourceId === this.playerInfo.playerId) {
       const skillInstance = new SkillInstance(
+        this.playerInfo.statPairs.swiftness,
         meterData.skill.get(trimmedPKT.skillId)?.name || "SKILL_NOT_FOUND",
         meterData.skill.get(trimmedPKT.skillId)?.icon || "PATH_NOT_FOUND",
         trimmedPKT
@@ -948,6 +998,8 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
       effectsTracker2.updateSummons(trimmedPKT);
       fileLogger.writePKT("NEWSUM", trimmedPKT);
     }
+  }).on("PKTStatChangeOriginNotify", (pkt) => {
+    console.log("STACHA", pkt.parsed);
   }).on("PKTRaidBegin", (pkt) => {
     const trimmedPKT = {
       raidResult: Number(pkt.parsed?.raidResult),

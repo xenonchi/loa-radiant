@@ -86,7 +86,7 @@ const defaultPlayerInfo: PlayerInfo = {
     gearLevel: -1,
     name: "N/A",
     statPairs: {
-        swiftness: 1600,
+        swiftness: 1550,
     },
 }
 
@@ -353,6 +353,7 @@ export class EffectsTracker {
     updateSkillStartNotify(trimmedPKT: TrimmedSkillStartNotify) {
         if (trimmedPKT.sourceId === this.playerInfo.playerId) {
             const skillInstance = new SkillInstance(
+                this.playerInfo.statPairs.swiftness,
                 meterData.skill.get(trimmedPKT.skillId)?.name ||
                     "SKILL_NOT_FOUND",
                 meterData.skill.get(trimmedPKT.skillId)?.icon ||

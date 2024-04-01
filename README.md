@@ -23,11 +23,11 @@
 
 **Gargadeth Bard POV**
 
-[![](./docs/demo-bard-gargadeth.jpg)](https://youtu.be/wYwDhsH4ALM)
+[![](./docs/demo-bard-1.jpg)](https://youtu.be/wYwDhsH4ALM)
 
-**Sonavel Bard POV**
+**Sonavel Sorceress POV, Artist Support**
 
-[![](./docs/demo-bard-sonavel.jpg)](https://youtu.be/wqt-OboX2aA)
+[![](./docs/demo-artist-1.jpg)](https://youtu.be/CjxQXq0VegQ)
 
 ## Development
 
@@ -44,7 +44,7 @@ git clone --recurse-submodules https://github.com/xenonchi/loa-radiant
 **Install Packages**
 - In `pkt`, run `npm i` to install node modules
 - In `ui`, run `npm i` to install node modules
-- In `ui/node_modules/.bin`, run `.\electron-rebuild.cmd --module-dir ../..` to rebuild broken packages
+- In `ui`, run `./node_modules/.bin/electron-rebuild.cmd` to rebuild broken packages
 
 **Dev**
 - In `pkt`, run `npm run build-dist`
