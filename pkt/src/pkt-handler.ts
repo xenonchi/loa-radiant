@@ -330,6 +330,9 @@ export function InitLogger(
                 fileLogger.writePKT("NEWSUM", trimmedPKT)
             }
         })
+        .on("PKTStatChangeOriginNotify", (pkt) => {
+            console.log("STACHA", pkt.parsed)
+        })
         .on("PKTRaidBegin", (pkt) => {
             const trimmedPKT: TrimmedRaidBegin = {
                 raidResult: Number(pkt.parsed?.raidResult),

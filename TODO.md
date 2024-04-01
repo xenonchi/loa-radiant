@@ -1,8 +1,9 @@
 
 **System**
 - `.exe` setup release
-    - Fix: Cannot locate meter-data when setup, but it's fine afterwards
+    - Fix: Cannot locate meter-data when setup, but it runs fine afterwards
 - `electron-updater` for auto-update
+- Automatially run `electron-rebuild`
 - Remove WS and use IPC for Electron-Frontend communication
 - WebSocket: Attempt to reconnect
 - Conversion of `bigint` based on required precision
@@ -14,8 +15,7 @@
     - Fix when there are more than 5 player effects tracker icon
 - Tracked skills
     - Add for Paladin and Artist
-    - Scale skill casting time based on swiftness (Atk. speed)
-- Stop tracking dead party members for buff
+- Stop tracking dead party members for buff: Keep a counter and reset when partyInfo is reloaded
 - Detect raid start & end
     - One-stage raids with `PKTRaid`: bossKillDataList
     - Multi-stage raids with `TriggerNotify`: [encounterMap](https://github.com/snoww/loa-logs/blob/3e67b4746b1a74ac28c52239a1043e99afe8310b/src/lib/constants/encounters.ts#L4)

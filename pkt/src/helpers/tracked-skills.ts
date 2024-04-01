@@ -9,18 +9,38 @@ export class SkillInstance {
     skillName: string
     iconPath: string
     pkt: SkillInstanceInfo
+    swiftness: number
     skillDurations: SkillDurationsInfoComputed
 
-    constructor(skillName: string, iconPath: string, pkt: SkillInstanceInfo) {
+    constructor(
+        swiftness: number,
+        skillName: string,
+        iconPath: string,
+        pkt: SkillInstanceInfo,
+    ) {
         this.startTime = getSecondsNow()
         this.skillName = skillName
         this.iconPath = iconPath
         this.pkt = pkt
-        this.skillDurations = getSkillDurations(pkt.skillId, pkt)
+        this.swiftness = swiftness
+        this.skillDurations = getSkillDurations(
+            this.computeAtkSpeed(),
+            pkt.skillId,
+            pkt,
+        )
+    }
+
+    computeAtkSpeed() {
+        /**
+         * 1. Apply 10% pet bonus
+         * 2. 100 Swiftness = 1.717% Atk Speed
+         */
+
+        return 1 + this.swiftness * 1.1 * 0.0001717
     }
 
     cancelSkill() {
-        this.skillDurations = trackedSkillDurationsCompute({
+        this.skillDurations = trackedSkillDurationsCompute(this.swiftness, {
             castTime: 0.01,
             duration: 0.01,
         })
@@ -83,6 +103,7 @@ const defaultSkillDurationsInfoComputed: SkillDurationsInfoComputed = {
 }
 
 const getSkillDurations = (
+    atkSpeed: number,
     skillId: number,
     pkt: SkillInstanceInfo,
 ): SkillDurationsInfoComputed => {
@@ -90,14 +111,15 @@ const getSkillDurations = (
         trackedSkillDurations[skillId] ??
         ((_) => defaultSkillDurationsInfoComputed)
 
-    return trackedSkillDurationsCompute(skillDurationsFunc(pkt))
+    return trackedSkillDurationsCompute(atkSpeed, skillDurationsFunc(pkt))
 }
 
 const trackedSkillDurationsCompute = (
+    atkSpeed: number,
     skillDuration: SkillDurationsInfo,
 ): SkillDurationsInfoComputed => {
     const skillDurationComputed: SkillDurationsInfoComputed = {
-        castTime: skillDuration.castTime,
+        castTime: skillDuration.castTime / atkSpeed,
         duration: skillDuration.duration,
         durationTotal: skillDuration.castTime + skillDuration.duration,
     }
@@ -108,7 +130,7 @@ const trackedSkillDurationsCompute = (
 const trackedSkillDurations: { [key: number]: SkillDurations } = {
     21180: (pkt) => {
         return {
-            castTime: 0.6,
+            castTime: 0.8,
             duration:
                 10 +
                 Number(pkt.skillOptionData?.tripodIndex?.first === 1) *
@@ -119,43 +141,43 @@ const trackedSkillDurations: { [key: number]: SkillDurations } = {
     },
     21170: (_) => {
         return {
-            castTime: 0.8,
+            castTime: 1,
             duration: 4,
         }
     },
     21140: (_) => {
         return {
-            castTime: 0.7,
+            castTime: 1,
             duration: 8,
         }
     },
     21141: (_) => {
         return {
-            castTime: 0.7,
+            castTime: 1,
             duration: 12,
         }
     },
     21142: (_) => {
         return {
-            castTime: 0.7,
+            castTime: 1,
             duration: 16,
         }
     },
     21143: (_) => {
         return {
-            castTime: 0.7,
+            castTime: 1,
             duration: 120, // Guessing!!
         }
     },
     21230: (_) => {
         return {
-            castTime: 2.3,
+            castTime: 3,
             duration: 10,
         }
     },
     21250: (pkt) => {
         return {
-            castTime: 0.8,
+            castTime: 1,
             duration: (pkt.skillOptionData?.tripodIndex?.third ?? 2) * 4,
             // Guardian's tune half duration tripod
         }
