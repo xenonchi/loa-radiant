@@ -44,7 +44,7 @@ git clone --recurse-submodules https://github.com/xenonchi/loa-radiant
 **Install Packages**
 - In `pkt`, run `npm i` to install node modules
 - In `ui`, run `npm i` to install node modules
-- In `ui`, run `./node_modules/.bin/electron-rebuild.cmd` to rebuild broken packages
+- In `ui`, run `npx electron-rebuild` to rebuild modules compiled in a different Node.js version
 
 **Dev**
 - In `pkt`, run `npm run build-dist`
@@ -54,5 +54,5 @@ git clone --recurse-submodules https://github.com/xenonchi/loa-radiant
 **Build**
 - In `pkt`, run `npm run build-dist`
 - Copy `pkt/dist/api.js` to `ui/electron/pkt/api.cjs`
-- In `ui`, run `npm run make` build the executable
+- In `ui`, run `npm run make` to build the executable
 - In `ui/out/LOA-Radiant-win32-x64`, run `LOA-Radiant.exe`
