@@ -331,7 +331,7 @@ export function InitLogger(
             }
         })
         .on("PKTStatChangeOriginNotify", (pkt) => {
-            console.log("STACHA", pkt.parsed)
+            // console.log("STACHA", pkt.parsed)
         })
         .on("PKTRaidBegin", (pkt) => {
             const trimmedPKT: TrimmedRaidBegin = {
