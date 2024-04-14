@@ -29,6 +29,10 @@
 
 [![](./docs/demo-artist-1.jpg)](https://youtu.be/CjxQXq0VegQ)
 
+## Contact
+
+Discord: 2385
+
 ## Development
 
 ```

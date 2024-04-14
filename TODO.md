@@ -1,6 +1,8 @@
 
 **System**
 - `.exe` setup release
+    - Move `meter-data` to not have duplicate
+    - "Packaged Electron App fails to Find Node Modules"
     - Fix: Cannot locate meter-data when setup, but it runs fine afterwards
 - `electron-updater` for auto-update
 - Remove WS and use IPC for Electron-Frontend communication
