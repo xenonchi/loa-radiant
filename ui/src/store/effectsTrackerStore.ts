@@ -47,6 +47,5 @@ export const effectsTrackerInstance: Writable<EffectsTrackerInstance> =
 const ws = new WebSocket('ws://localhost:8081')
 
 ws.onmessage = function (event) {
-    // console.log(event.data)
     effectsTrackerInstance.set(JSON.parse(event.data))
 }

@@ -86,7 +86,7 @@
 <main class="overflow-hidden">
     <div class="flex flex-row">
         <div class="flex flex-row w-screen h-18">
-            <div class="bg-black bg-opacity-10">
+            <div class="bg-black bg-opacity-10 max-w-[10.5rem] overflow-hidden">
                 <div>
                     <EffectsTrackerBar
                         duration={data.boss?.brand ?? 0}

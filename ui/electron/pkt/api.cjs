@@ -449,9 +449,16 @@ var EffectsTracker = class {
     this.resetStartTime();
     this.bossInfo = [];
     this.nearbyPC = /* @__PURE__ */ new Map();
+    this.summonsTracker = /* @__PURE__ */ new Map();
     this.skillsTracker = /* @__PURE__ */ new Map();
     this.removeExpiredEntities(300);
     this.latestBuff = null;
+  }
+  hardResetTracker() {
+    this.playerInfo = defaultPlayerInfo;
+    this.identityGauge = 0;
+    this.partyInfo = [];
+    this.resetTracker();
   }
   //**********************************
   /**************************************
@@ -521,6 +528,24 @@ var EffectsTracker = class {
   addBossEntity(trimmedPKT) {
     this.bossInfo.push(trimmedPKT);
   }
+  updateLastEffectTimeTracker(objectId, effect) {
+    this.lastEffectTimeTracker.set(objectId, effect.endTime);
+  }
+  removeExpiredEntities(threshold) {
+    const currentTime = getSecondsNow();
+    for (const [id, t] of this.lastEffectTimeTracker.entries()) {
+      if (t < currentTime - threshold) {
+        this.lastEffectTimeTracker.delete(id);
+        if (this.entityTracker.has(id)) {
+          this.entityTracker.delete(id);
+        }
+      }
+    }
+  }
+  //**********************************
+  /**************************************
+   * PARTY MEMBER TRACKING METHODS
+   ***************************************/
   addPartyEntities(trimmedPKT) {
     this.partyInfo = trimmedPKT.partyInfo;
     for (const partyMember of this.partyInfo) {
@@ -528,6 +553,26 @@ var EffectsTracker = class {
         partyMember.characterId = this.playerInfo.playerId;
       }
       this.syncPlayerIDFromPartyInfo(partyMember.characterId);
+      this.guessIfPartyMemberIsPlayer();
+    }
+  }
+  guessIfPartyMemberIsPlayer() {
+    if (this.playerInfo.classId > 0) {
+      return;
+    }
+    const unidentifiedPC = this.partyInfo.filter((p) => p.playerId === -1);
+    if (unidentifiedPC.length === 1) {
+      const playerInfoFromPartyInfo = unidentifiedPC[0];
+      if (playerInfoFromPartyInfo !== void 0) {
+        this.playerInfo = {
+          ...this.playerInfo,
+          characterId: playerInfoFromPartyInfo.characterId,
+          characterClass: playerInfoFromPartyInfo.characterClass,
+          classId: playerInfoFromPartyInfo.classId,
+          gearLevel: playerInfoFromPartyInfo.gearLevel,
+          name: playerInfoFromPartyInfo.name
+        };
+      }
     }
   }
   syncPlayerIDFromPartyInfo(characterId) {
@@ -556,20 +601,6 @@ var EffectsTracker = class {
         trimmedPKT.characterId,
         trimmedPKT
       );
-    }
-  }
-  updateLastEffectTimeTracker(objectId, effect) {
-    this.lastEffectTimeTracker.set(objectId, effect.endTime);
-  }
-  removeExpiredEntities(threshold) {
-    const currentTime = getSecondsNow();
-    for (const [id, t] of this.lastEffectTimeTracker.entries()) {
-      if (t < currentTime - threshold) {
-        this.lastEffectTimeTracker.delete(id);
-        if (this.entityTracker.has(id)) {
-          this.entityTracker.delete(id);
-        }
-      }
     }
   }
   //**********************************
@@ -615,44 +646,17 @@ var EffectsTracker = class {
     this.identityGauge = trimmedPKT.identityGauge;
   }
   updateInitEnv(trimmedPKT) {
-    this.playerInfo.playerId = trimmedPKT.playerId;
     this.resetTracker();
+    this.playerInfo.playerId = trimmedPKT.playerId;
   }
   updateInitPC(trimmedPKT) {
+    this.hardResetTracker();
     this.playerInfo = trimmedPKT;
   }
   //**********************************
   /**************************************
    * TESTING
    ***************************************/
-  apiTestWIP() {
-    return {
-      t: getTimeNow(),
-      elapsed: this.getElapsedTime(),
-      identity: this.identityGauge,
-      boss: this.guessLatestBoss()?.name ?? "No boss detected",
-      latestBuff: this.apiLatestBuff()
-    };
-  }
-  apiLatestBuff() {
-    if (this.latestBuff === null) {
-      return "N/A";
-    } else {
-      const buffLevel = {
-        211400: 1,
-        211410: 2,
-        211420: 3
-      }[this.latestBuff.statusEffectId];
-      const timeDelta = this.latestBuff.endTime - getSecondsNow();
-      if (timeDelta >= 0) {
-        return `[Level ${buffLevel}] ${Math.abs(
-          Math.round(timeDelta)
-        )}s remaining`;
-      } else {
-        return `${Math.abs(Math.round(timeDelta))}s ago`;
-      }
-    }
-  }
   //**********************************
   /**************************************
    * EFFECTS TRACKER WEBSOCKET HELPER METHODS
@@ -999,7 +1003,6 @@ function InitLogger(meterData3, useRawSocket, listenPort, clientId, options) {
       fileLogger.writePKT("NEWSUM", trimmedPKT);
     }
   }).on("PKTStatChangeOriginNotify", (pkt) => {
-    console.log("STACHA", pkt.parsed);
   }).on("PKTRaidBegin", (pkt) => {
     const trimmedPKT = {
       raidResult: Number(pkt.parsed?.raidResult),

@@ -6,6 +6,10 @@
     export let gearLevel: number
     export let circleMaxDuration = 10
 
+    if (isNaN(classId)) {
+        classId = -1
+    }
+
     $: angle =
         (360 / circleMaxDuration) *
         (duration > circleMaxDuration ? circleMaxDuration : duration)
@@ -26,13 +30,11 @@ conic-gradient(${circleColor} 0deg, ${circleColor});`
         <div
             class="bg-slate-900 h-full w-full rounded-full duration-300 overflow-hidden"
         >
-            {#if !disabled}
-                <img
-                    class={`rounded-full scale-110`}
-                    src={`./classes/${classId}.png`}
-                    alt={'skill'}
-                />
-            {/if}
+            <img
+                class={`rounded-full ${disabled ? 'scale-95 mt-[1px]' : 'scale-105'}`}
+                src={`./classes/${classId}.png`}
+                alt={'skill'}
+            />
         </div>
     </div>
     <p class={`text-center text-[0.65rem]`}>

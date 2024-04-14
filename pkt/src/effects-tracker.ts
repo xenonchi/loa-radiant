@@ -126,12 +126,22 @@ export class EffectsTracker {
     }
 
     resetTracker(): void {
+        /* For when entering a new zone (InitEnv) */
         this.resetStartTime()
         this.bossInfo = []
         this.nearbyPC = new Map<number, PCInfo>()
+        this.summonsTracker = new Map<number, number>()
         this.skillsTracker = new Map<number, SkillInstance>()
         this.removeExpiredEntities(300)
         this.latestBuff = null
+    }
+
+    hardResetTracker(): void {
+        /* For when loading a new character (InitPC) */
+        this.playerInfo = defaultPlayerInfo
+        this.identityGauge = 0
+        this.partyInfo = []
+        this.resetTracker()
     }
 
     //**********************************
@@ -238,6 +248,39 @@ export class EffectsTracker {
         this.bossInfo.push(trimmedPKT as NPCInfo)
     }
 
+    updateLastEffectTimeTracker(objectId: number, effect: Effect) {
+        /**
+         * Tracks the last time an entity was affected by an effect.
+         */
+
+        this.lastEffectTimeTracker.set(objectId, effect.endTime)
+    }
+
+    removeExpiredEntities(threshold: number): void {
+        /**
+         * Remove entities that have not been affected by an effect
+         * within a set amount of time.
+         *
+         * threshold: time in seconds
+         */
+
+        const currentTime = getSecondsNow()
+
+        for (const [id, t] of this.lastEffectTimeTracker.entries()) {
+            if (t < currentTime - threshold) {
+                this.lastEffectTimeTracker.delete(id)
+                if (this.entityTracker.has(id)) {
+                    this.entityTracker.delete(id)
+                }
+            }
+        }
+    }
+
+    //**********************************
+    /**************************************
+     * PARTY MEMBER TRACKING METHODS
+     ***************************************/
+
     addPartyEntities(trimmedPKT: TrimmedPartyInfo): void {
         /**
          * Information on party members.
@@ -256,6 +299,35 @@ export class EffectsTracker {
             }
 
             this.syncPlayerIDFromPartyInfo(partyMember.characterId)
+            this.guessIfPartyMemberIsPlayer()
+        }
+    }
+
+    guessIfPartyMemberIsPlayer(): void {
+        /**
+         * If InitPC had not been initiated,
+         * Guess playerInfo from partyInfo where the NewPC has not loaded
+         */
+
+        if (this.playerInfo.classId > 0) {
+            return
+        }
+
+        const unidentifiedPC = this.partyInfo.filter((p) => p.playerId === -1)
+
+        if (unidentifiedPC.length === 1) {
+            const playerInfoFromPartyInfo = unidentifiedPC[0]
+
+            if (playerInfoFromPartyInfo !== undefined) {
+                this.playerInfo = {
+                    ...this.playerInfo,
+                    characterId: playerInfoFromPartyInfo.characterId,
+                    characterClass: playerInfoFromPartyInfo.characterClass,
+                    classId: playerInfoFromPartyInfo.classId,
+                    gearLevel: playerInfoFromPartyInfo.gearLevel,
+                    name: playerInfoFromPartyInfo.name,
+                }
+            }
         }
     }
 
@@ -307,34 +379,6 @@ export class EffectsTracker {
                 trimmedPKT.characterId,
                 trimmedPKT as PCInfo,
             )
-        }
-    }
-
-    updateLastEffectTimeTracker(objectId: number, effect: Effect) {
-        /**
-         * Tracks the last time an entity was affected by an effect.
-         */
-
-        this.lastEffectTimeTracker.set(objectId, effect.endTime)
-    }
-
-    removeExpiredEntities(threshold: number): void {
-        /**
-         * Remove entities that have not been affected by an effect
-         * within a set amount of time.
-         *
-         * threshold: time in seconds
-         */
-
-        const currentTime = getSecondsNow()
-
-        for (const [id, t] of this.lastEffectTimeTracker.entries()) {
-            if (t < currentTime - threshold) {
-                this.lastEffectTimeTracker.delete(id)
-                if (this.entityTracker.has(id)) {
-                    this.entityTracker.delete(id)
-                }
-            }
         }
     }
 
@@ -398,11 +442,12 @@ export class EffectsTracker {
          * Usually generated when a new map is loaded.
          */
 
-        this.playerInfo.playerId = trimmedPKT.playerId
         this.resetTracker()
+        this.playerInfo.playerId = trimmedPKT.playerId
     }
 
     updateInitPC(trimmedPKT: TrimmedInitPC): void {
+        this.hardResetTracker()
         this.playerInfo = trimmedPKT
     }
 
@@ -410,37 +455,6 @@ export class EffectsTracker {
     /**************************************
      * TESTING
      ***************************************/
-
-    apiTestWIP() {
-        return {
-            t: getTimeNow(),
-            elapsed: this.getElapsedTime(),
-            identity: this.identityGauge,
-            boss: this.guessLatestBoss()?.name ?? "No boss detected",
-            latestBuff: this.apiLatestBuff(),
-        }
-    }
-
-    apiLatestBuff(): string {
-        if (this.latestBuff === null) {
-            return "N/A"
-        } else {
-            const buffLevel = {
-                211400: 1,
-                211410: 2,
-                211420: 3,
-            }[this.latestBuff.statusEffectId]
-
-            const timeDelta = this.latestBuff.endTime - getSecondsNow()
-            if (timeDelta >= 0) {
-                return `[Level ${buffLevel}] ${Math.abs(
-                    Math.round(timeDelta),
-                )}s remaining`
-            } else {
-                return `${Math.abs(Math.round(timeDelta))}s ago`
-            }
-        }
-    }
 
     //**********************************
     /**************************************
@@ -554,7 +568,7 @@ export class EffectsTracker {
 
     maxEffectsDurationByType(t: StatusEffectsTypes, effects: Effect[]): number {
         /**
-         * Return empty if none are active
+         * Return longest duration of a given effects type
          */
 
         const filteredEffectsDuration = effects
