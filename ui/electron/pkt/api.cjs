@@ -168,10 +168,17 @@ var encounterMap = {
       "Subordinated Legoros",
       "Brand of Subordination"
     ]
+  },
+  Thaemine: {
+    "Thaemine G1": ["Killineza the Dark Worshipper"],
+    "Thaemine G2": ["Valinak, Knight of Darkness", "Valinak, Taboo Usurper", "Valinak, Herald of the End"],
+    "Thaemine G3": ["Thaemine the Lightqueller", "Darkness Sword", "Giant Darkness Sword"],
+    "Thaemine G4": ["Darkness Legion Commander Thaemine", "Thaemine, Conqueror of Stars"]
   }
 };
 var raidNames = Object.values(encounterMap).flatMap((encounter) => Object.values(encounter)).flat();
 var guardianRaidNames = [
+  "Vescal",
   "Gargadeth",
   "Sonavel",
   "Hanumatan",

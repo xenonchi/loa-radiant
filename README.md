@@ -31,7 +31,7 @@
 
 ## Contact
 
-Discord: 2385
+Discord: 2385 (Xenon)
 
 ## Development
 

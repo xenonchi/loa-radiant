@@ -159,6 +159,12 @@ export const encounterMap: { [key: string]: { [key: string]: Array<string> } } =
                 "Brand of Subordination",
             ],
         },
+        Thaemine: {
+            "Thaemine G1": ["Killineza the Dark Worshipper"],
+            "Thaemine G2": ["Valinak, Knight of Darkness", "Valinak, Taboo Usurper", "Valinak, Herald of the End"],
+            "Thaemine G3": ["Thaemine the Lightqueller", "Darkness Sword", "Giant Darkness Sword"],
+            "Thaemine G4": ["Darkness Legion Commander Thaemine", "Thaemine, Conqueror of Stars"]
+        }
     }
 
 export const raidNames: string[] = Object.values(encounterMap)
@@ -166,6 +172,7 @@ export const raidNames: string[] = Object.values(encounterMap)
     .flat()
 
 export const guardianRaidNames: string[] = [
+    "Veskal",
     "Gargadeth",
     "Sonavel",
     "Hanumatan",
