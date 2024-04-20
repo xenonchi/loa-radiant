@@ -178,7 +178,7 @@ var encounterMap = {
 };
 var raidNames = Object.values(encounterMap).flatMap((encounter) => Object.values(encounter)).flat();
 var guardianRaidNames = [
-  "Vescal",
+  "Veskal",
   "Gargadeth",
   "Sonavel",
   "Hanumatan",
