@@ -172,7 +172,7 @@ export const raidNames: string[] = Object.values(encounterMap)
     .flat()
 
 export const guardianRaidNames: string[] = [
-    "Veskal",
+    "Veskal", "Vescal",
     "Gargadeth",
     "Sonavel",
     "Hanumatan",
