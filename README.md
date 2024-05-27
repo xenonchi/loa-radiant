@@ -1,6 +1,6 @@
 # LOA Radiant
 
-**Beta Pre-Release.** Lost Ark support overlay for tracking attack buffs, brand duration and selected skills duration using the [`meter-core`](https://github.com/lost-ark-dev/meter-core) packet parser.
+Lost Ark support overlay for tracking attack buffs, brand duration and selected skills duration using the [`meter-core`](https://github.com/lost-ark-dev/meter-core) packet parser.
 
 ![](./docs/loa-radiant-img.jpg)
 ![](./docs/loa-radiant-img-annotated.jpg)
@@ -32,6 +32,8 @@
 ## Contact
 
 Discord: 2385 (Xenon)
+
+I'm looking for help with packaging this Svelte-Electron app into an executable. If you have such experience, contact me.
 
 ## Development
 
